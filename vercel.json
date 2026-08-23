@@ -2,7 +2,10 @@
     "services": {
         "frontend": {
             "root": "frontend",
-            "framework": "vite"
+            "framework": "vite",
+            "routes": [
+                { "src": "/(.*)", "dest": "/index.html" }
+            ]
         },
         "backend": {
             "root": "backend",
