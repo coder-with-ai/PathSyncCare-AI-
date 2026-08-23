@@ -1,6 +1,8 @@
 # 🏥 PathCareSync AI - Adaptive Care Intelligence 
 **Patient Care Twin + Expected-vs-Actual Deviation Engine**
 
+> ⚠️ **Project Status:** This repository contains a fully functional **demo working prototype** of the PathCareSync AI platform.
+>
 > *Bridging the gap between hospital discharge and long-term disease management. PathCareSync AI models a patient's expected care journey, detects when reality drifts from it, and helps the care team intelligently close the gap.*
 
 ---
@@ -63,4 +65,3 @@ Built with passion and technical rigor by:
 
 *   **Anuj Saini** – B.Tech CSE (AI & ML), 2nd Year Student
 *   **Divyanshi Singh** – B.Tech CSE (Data Science) ,  2nd Year Student
-
