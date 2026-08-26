@@ -1,4 +1,4 @@
-# 🏥 PathCareSync AI - Adaptive Care Intelligence 
+# 🏥 PathSyncCare AI - Adaptive Care Intelligence 
 **Patient Care Twin + Expected-vs-Actual Deviation Engine**
 
 > ⚠️ **Project Status:** This repository contains a fully functional **demo working prototype** of the PathCareSync AI platform.
