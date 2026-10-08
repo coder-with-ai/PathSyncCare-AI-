@@ -64,4 +64,4 @@ Our infrastructure is powered by **RocketRide: Developer-First AI Pipeline Infra
 Built with passion and technical rigor by:
 
 *   **Anuj Saini** – B.Tech CSE (AI & ML), 2nd Year Student
-*   **Divyanshi Singh** – B.Tech CSE (Data Science) ,  2nd Year Student
+
