@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import ABDMModal from './ABDMModal';
 import NotificationDrawer from './NotificationDrawer';
@@ -12,41 +13,82 @@ export default function AppLayout() {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <div className="flex-1 ml-[260px]">
+
+      <div className="flex-1 ml-[264px]">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-8 border-b border-[var(--color-border)] bg-[var(--color-bg-primary)]/80 backdrop-blur-xl">
+        <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-8"
+          style={{
+            background: 'rgba(20, 30, 26, 0.85)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(88, 129, 87, 0.18)',
+          }}
+        >
+          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
             <input
               type="text"
-              placeholder="Search patients, alerts, pipelines..."
-              className="w-80 h-9 pl-10 pr-4 rounded-lg bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+              placeholder="Search patients, alerts, pipelines…"
+              className="w-80 h-9 pl-10 pr-4 rounded-xl text-sm transition-all"
+              style={{
+                background: 'rgba(28, 41, 34, 0.7)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-primary)',
+                outline: 'none',
+              }}
+              onFocus={e => {
+                (e.target as HTMLInputElement).style.borderColor = 'rgba(107,154,150,0.5)';
+                (e.target as HTMLInputElement).style.boxShadow = '0 0 0 3px rgba(107,154,150,0.1)';
+              }}
+              onBlur={e => {
+                (e.target as HTMLInputElement).style.borderColor = 'var(--color-border)';
+                (e.target as HTMLInputElement).style.boxShadow = 'none';
+              }}
             />
           </div>
 
-          <div className="flex items-center gap-4 relative">
-            {/* ABDM Connected Trigger Button */}
+          <div className="flex items-center gap-3 relative">
+            {/* ABDM Connected */}
             <button
               onClick={() => setAbdmModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all cursor-pointer group"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all cursor-pointer group"
+              style={{
+                background: 'rgba(88, 129, 87, 0.1)',
+                border: '1px solid rgba(88, 129, 87, 0.2)',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(88,129,87,0.4)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(88,129,87,0.16)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(88,129,87,0.2)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(88,129,87,0.1)';
+              }}
             >
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
-              <span className="text-xs text-[var(--color-text-secondary)] font-medium group-hover:text-emerald-400 transition-colors">
+              <div className="w-2 h-2 rounded-full bg-[var(--color-accent-light)] animate-pulse" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[var(--color-accent-light)]" />
+              <span className="text-xs text-[var(--color-accent-light)] font-semibold">
                 ABDM Connected
               </span>
             </button>
 
-            {/* Notification Bell Trigger Button */}
-            <button
+            {/* Notification Bell */}
+            <motion.button
               onClick={() => setNotifDrawerOpen(!notifDrawerOpen)}
-              className="relative p-2 rounded-lg hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative p-2.5 rounded-xl transition-colors cursor-pointer"
+              style={{
+                background: 'rgba(28, 41, 34, 0.7)',
+                border: '1px solid var(--color-border)',
+              }}
             >
-              <Bell className="w-5 h-5 text-[var(--color-text-secondary)] hover:text-white transition-colors" />
+              <Bell className="w-4.5 h-4.5 text-[var(--color-text-secondary)]" style={{ width: 18, height: 18 }} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--color-danger)] animate-pulse" />
-            </button>
+            </motion.button>
 
-            {/* Notification Drawer Popover */}
+            {/* Notification Drawer */}
             <NotificationDrawer
               isOpen={notifDrawerOpen}
               onClose={() => setNotifDrawerOpen(false)}
@@ -55,12 +97,12 @@ export default function AppLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="p-8">
+        <main className="p-8 min-h-[calc(100vh-64px)]">
           <Outlet />
         </main>
       </div>
 
-      {/* ABDM Information Modal */}
+      {/* ABDM Modal */}
       <ABDMModal
         isOpen={abdmModalOpen}
         onClose={() => setAbdmModalOpen(false)}
