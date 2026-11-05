@@ -1,4 +1,4 @@
-# 🏥 PathSyncCare AI - Adaptive Care Intelligence 
+# 🏥 PathCareSync AI - Adaptive Care Intelligence 
 **Patient Care Twin + Expected-vs-Actual Deviation Engine**
 
 > ⚠️ **Project Status:** This repository contains a fully functional **demo working prototype** of the PathCareSync AI platform.
@@ -64,4 +64,4 @@ Our infrastructure is powered by **RocketRide: Developer-First AI Pipeline Infra
 Built with passion and technical rigor by:
 
 *   **Anuj Saini** – B.Tech CSE (AI & ML), 2nd Year Student
-
+*   **Yashpreet Singh Gujral** – B.Tech CSE (AI & ML), 2nd Year Student
