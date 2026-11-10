@@ -1,43 +1,34 @@
-"""Patient API router."""
-from fastapi import APIRouter, HTTPException
-from app.models.demo_data import store
+"""
+Patient API router.
+Serves patient cohorts, profiles, and Care Twin trajectories from Azure SQL Database.
+"""
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.crud import patients as crud_patients
 
 router = APIRouter(prefix="/api/patients", tags=["patients"])
 
 
 @router.get("")
-def list_patients():
+def list_patients(db: Session = Depends(get_db)):
     """List all patients with summary info."""
-    return [
-        {
-            "id": p.id, "name": p.name, "age": p.age, "gender": p.gender,
-            "abha_id": p.abha_id, "disease": p.disease.value,
-            "discharge_date": str(p.discharge_date), "risk_score": p.risk_score,
-            "compliance_rate": p.compliance_rate, "active_alerts": p.active_alerts,
-            "avatar_color": p.avatar_color,
-        }
-        for p in store.patients
-    ]
+    return crud_patients.get_patients_summary(db)
 
 
 @router.get("/{patient_id}")
-def get_patient(patient_id: str):
+def get_patient(patient_id: str, db: Session = Depends(get_db)):
     """Get full patient profile."""
-    for p in store.patients:
-        if p.id == patient_id:
-            return p.model_dump()
-    raise HTTPException(status_code=404, detail="Patient not found")
+    patient = crud_patients.get_patient_detail(db, patient_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return patient
 
 
 @router.get("/{patient_id}/trajectory")
-def get_trajectory(patient_id: str):
+def get_trajectory(patient_id: str, db: Session = Depends(get_db)):
     """Get expected vs actual trajectory data for Care Twin chart."""
-    for p in store.patients:
-        if p.id == patient_id:
-            return {
-                "patient_id": p.id,
-                "disease": p.disease.value,
-                "trajectory": [t.model_dump() for t in p.trajectory],
-                "milestones": [m.model_dump() for m in p.care_plan.milestones],
-            }
-    raise HTTPException(status_code=404, detail="Patient not found")
+    traj = crud_patients.get_patient_trajectory(db, patient_id)
+    if not traj:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return traj

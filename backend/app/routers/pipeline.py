@@ -1,37 +1,44 @@
-"""Pipeline API router."""
-from fastapi import APIRouter, HTTPException
-from app.models.demo_data import store
+"""
+Pipeline API router.
+Manages AI pipeline execution runs, DAG node states, and trigger operations with Azure SQL persistence.
+"""
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from app.database import get_db
+from app.models.sql_models import Patient
+from app.crud import pipeline as crud_pipeline
 from pipelines.pipeline_runner import simulate_pipeline_run
-import asyncio
 
 router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
 
 
 @router.get("/runs")
-def list_runs():
-    """List all pipeline runs."""
-    return [r.model_dump() for r in store.pipeline_runs]
+def list_runs(db: Session = Depends(get_db)):
+    """List all pipeline runs from Azure SQL."""
+    return crud_pipeline.get_pipeline_runs(db)
 
 
 @router.get("/runs/{run_id}")
-def get_run(run_id: str):
+def get_run(run_id: str, db: Session = Depends(get_db)):
     """Get detailed pipeline run with node statuses."""
-    for r in store.pipeline_runs:
-        if r.id == run_id:
-            return r.model_dump()
-    raise HTTPException(status_code=404, detail="Pipeline run not found")
+    run = crud_pipeline.get_pipeline_run(db, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Pipeline run not found")
+    return run
 
 
 @router.post("/trigger")
-async def trigger_pipeline(pipeline_type: str = "daily_sweep"):
-    """Trigger a new pipeline run (simulated)."""
+async def trigger_pipeline(pipeline_type: str = "daily_sweep", db: Session = Depends(get_db)):
+    """Trigger a new pipeline run and persist execution log into Azure SQL."""
+    patient_count = db.query(func.count(Patient.id)).scalar() or 14
     new_run = await simulate_pipeline_run(
         pipeline_type=pipeline_type,
         triggered_by="Manual Trigger (Dashboard)",
-        patients_count=len(store.patients),
+        patients_count=patient_count,
     )
-    store.pipeline_runs.insert(0, new_run)
-    return new_run.model_dump()
+    saved_run = crud_pipeline.save_pipeline_run(db, new_run)
+    return saved_run
 
 
 @router.get("/nodes")
