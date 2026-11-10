@@ -47,7 +47,7 @@ Our infrastructure is powered by **RocketRide: Developer-First AI Pipeline Infra
 
 ### **Backend & AI Orchestration**
 *   🐍 **FastAPI / Python 3.11** (High-performance API)
-*   🚀 **RocketRide Python SDK** (Pipeline triggers & meta-harness)
+*   🚀    Pipeline triggers & meta-harness
 *   ⚙️ **Celery + Redis** (Asynchronous task queues)
 *   🤖 **AI Models:** XGBoost (Deviation Scorer), Gemini 1.5 Flash (LLM Explanation), OpenAI Whisper (Audio Transcription)
 
@@ -55,7 +55,7 @@ Our infrastructure is powered by **RocketRide: Developer-First AI Pipeline Infra
 *   🐘 **PostgreSQL 15 + Supabase** (Auth & Row Level Security)
 *   ⏱️ **TimescaleDB** (Time-series optimization for patient vitals)
 *   🏛️ **ABDM / ABHA API** (National health stack integration)
-*   ☁️ **RocketRide Cloud** (One-click deployment)
+*   ☁️ **Microsoft Azure Cloud** (One-click deployment)
 
 ---
 
