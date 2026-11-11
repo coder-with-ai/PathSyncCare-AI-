@@ -7,7 +7,12 @@ import {
   User, Mail, Sparkles, Check, RefreshCw
 } from 'lucide-react';
 import DatabaseConnectionModal from '../components/Database/DatabaseConnectionModal';
-import { getDatabaseConfig, type DatabaseConfig } from '../api/supabaseClient';
+import {
+  getDatabaseConfig,
+  sendSupabaseOtp,
+  verifySupabaseOtp,
+  type DatabaseConfig
+} from '../api/supabaseClient';
 import { registerNewPatient } from '../api/mockData';
 import type { DiseaseType } from '../types';
 
@@ -40,7 +45,10 @@ export default function Login() {
   // OTP state
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [otpSentMessage, setOtpSentMessage] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [realEmailSent, setRealEmailSent] = useState(false);
 
   // Database connector modal
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
@@ -48,17 +56,44 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  const handleStartOtp = (e: React.FormEvent) => {
+  const handleStartOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const destination = authMode === 'register' ? regEmail || regAbha : loginIdentifier || 'your registered mobile/email';
-    setOtpSentMessage(`A secure 6-digit verification code has been dispatched to ${destination}.`);
-    setStep('otp');
+    setIsSendingOtp(true);
+    setOtpError('');
+    const destination = authMode === 'register' ? regEmail.trim() : loginIdentifier.trim();
+
+    try {
+      const res = await sendSupabaseOtp(destination);
+      setOtpSentMessage(res.message);
+      setRealEmailSent(res.realEmailSent);
+      setStep('otp');
+    } catch {
+      setOtpSentMessage(`Verification code sent for ${destination || 'your account'}. Use code 452188.`);
+      setRealEmailSent(false);
+      setStep('otp');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    const destination = authMode === 'register' ? regEmail.trim() : loginIdentifier.trim();
+    setIsSendingOtp(true);
+    setOtpError('');
+    try {
+      const res = await sendSupabaseOtp(destination);
+      setOtpSentMessage(res.message);
+      setRealEmailSent(res.realEmailSent);
+    } finally {
+      setIsSendingOtp(false);
+    }
   };
 
   const handleOtpChange = (val: string, index: number) => {
     const updated = [...otp];
     updated[index] = val.slice(-1);
     setOtp(updated);
+    setOtpError('');
     if (val && index < 5) {
       const nextInput = document.getElementById(`otp-input-${index + 1}`);
       nextInput?.focus();
@@ -67,65 +102,74 @@ export default function Login() {
 
   const handleFillDemoOtp = () => {
     setOtp(['4', '5', '2', '1', '8', '8']);
+    setOtpError('');
   };
 
-  const handleVerifyAndLogin = () => {
+  const handleVerifyAndLogin = async () => {
     setIsVerifying(true);
+    setOtpError('');
+    const destination = authMode === 'register' ? regEmail.trim() : loginIdentifier.trim();
+    const token = otp.join('');
 
-    setTimeout(() => {
-      if (authMode === 'register' && role === 'Patient') {
-        // Register the new patient into the cohort and local persistence
-        const createdPatient = registerNewPatient({
-          name: regName.trim(),
-          email: regEmail.trim(),
-          abha_id: regAbha.trim() || `91-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`,
-          disease: regDisease,
-          age: regAge,
-          gender: regGender,
-          phone: regPhone,
-          discharge_date: regDischargeDate,
-        });
-
-        localStorage.setItem(
-          'user_session',
-          JSON.stringify({
-            role: 'Patient',
-            patient_id: createdPatient.id,
-            name: createdPatient.name,
-            email: regEmail,
-            abha_id: createdPatient.abha_id,
-            disease: createdPatient.disease,
-            loginAt: new Date().toISOString(),
-          })
-        );
-
-        navigate('/patient-portal');
-      } else if (role === 'Patient') {
-        localStorage.setItem(
-          'user_session',
-          JSON.stringify({
-            role: 'Patient',
-            patient_id: 'P-1001',
-            name: loginIdentifier || 'Ramesh Patel',
-            loginAt: new Date().toISOString(),
-          })
-        );
-        navigate('/patient-portal');
-      } else {
-        // Logged in as Doctor
-        const doctorName = regName || loginIdentifier || 'Dr. Arun Mehta';
-        localStorage.setItem(
-          'user_session',
-          JSON.stringify({
-            role: 'Doctor',
-            name: doctorName,
-            loginAt: new Date().toISOString(),
-          })
-        );
-        navigate('/dashboard');
-      }
+    const verifyRes = await verifySupabaseOtp(destination, token);
+    if (!verifyRes.success) {
+      setOtpError(verifyRes.message || 'Incorrect verification code. Please check your email or click "Auto-fill Demo Code (452188)".');
       setIsVerifying(false);
-    }, 700);
+      return;
+    }
+
+    if (authMode === 'register' && role === 'Patient') {
+      // Register the new patient into the cohort and local persistence
+      const createdPatient = registerNewPatient({
+        name: regName.trim(),
+        email: regEmail.trim(),
+        abha_id: regAbha.trim() || `91-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`,
+        disease: regDisease,
+        age: regAge,
+        gender: regGender,
+        phone: regPhone,
+        discharge_date: regDischargeDate,
+      });
+
+      localStorage.setItem(
+        'user_session',
+        JSON.stringify({
+          role: 'Patient',
+          patient_id: createdPatient.id,
+          name: createdPatient.name,
+          email: regEmail,
+          abha_id: createdPatient.abha_id,
+          disease: createdPatient.disease,
+          loginAt: new Date().toISOString(),
+        })
+      );
+
+      navigate('/patient-portal');
+    } else if (role === 'Patient') {
+      localStorage.setItem(
+        'user_session',
+        JSON.stringify({
+          role: 'Patient',
+          patient_id: 'P-1001',
+          name: loginIdentifier || 'Ramesh Patel',
+          loginAt: new Date().toISOString(),
+        })
+      );
+      navigate('/patient-portal');
+    } else {
+      // Logged in as Doctor
+      const doctorName = regName || loginIdentifier || 'Dr. Arun Mehta';
+      localStorage.setItem(
+        'user_session',
+        JSON.stringify({
+          role: 'Doctor',
+          name: doctorName,
+          loginAt: new Date().toISOString(),
+        })
+      );
+      navigate('/dashboard');
+    }
+    setIsVerifying(false);
   };
 
   // Instant demo helper
@@ -373,14 +417,24 @@ export default function Login() {
 
                   <button
                     type="submit"
-                    className="w-full h-10 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-lg"
+                    disabled={isSendingOtp}
+                    className="w-full h-10 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-lg disabled:opacity-60"
                     style={{
                       background: 'linear-gradient(135deg, #6B9A96, #4A7A76)',
                     }}
                   >
-                    <Key className="w-3.5 h-3.5" />
-                    <span>Generate Authentication OTP</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    {isSendingOtp ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Sending OTP Email via Supabase...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Key className="w-3.5 h-3.5" />
+                        <span>Generate Authentication OTP</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </>
+                    )}
                   </button>
                 </form>
               )}
@@ -530,14 +584,24 @@ export default function Login() {
 
                   <button
                     type="submit"
-                    className="w-full h-10 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-lg"
+                    disabled={isSendingOtp}
+                    className="w-full h-10 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-lg disabled:opacity-60"
                     style={{
                       background: 'linear-gradient(135deg, #3ECF8E, #2BA56D)',
                     }}
                   >
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Proceed to OTP Verification</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    {isSendingOtp ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Sending Verification Email...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="w-3.5 h-3.5" />
+                        <span>Proceed to OTP Verification</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </>
+                    )}
                   </button>
                 </form>
               )}
@@ -562,7 +626,24 @@ export default function Login() {
                 <p className="text-[11px] text-[var(--color-text-muted)] mt-1 max-w-xs mx-auto">
                   {otpSentMessage || 'A verification code has been dispatched to your registered credentials.'}
                 </p>
+                {realEmailSent ? (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#3ECF8E]/15 border border-[#3ECF8E]/30 text-[#3ECF8E] text-[10px] font-medium mt-2">
+                    <Mail className="w-3 h-3" />
+                    <span>Real Email Dispatched via Supabase Auth — Check Inbox / Spam</span>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[rgba(107,154,150,0.12)] border border-[var(--color-border)] text-[var(--color-text-secondary)] text-[10px] font-medium mt-2">
+                    <Sparkles className="w-3 h-3 text-[#3ECF8E]" />
+                    <span>Instant Demo Mode Active — Code: 452188</span>
+                  </div>
+                )}
               </div>
+
+              {otpError && (
+                <div className="p-2.5 rounded-xl bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] text-[11px] text-[#fca5a5] text-center">
+                  {otpError}
+                </div>
+              )}
 
               {/* 6-Digit Input Boxes */}
               <div className="flex gap-2 justify-center py-2">
@@ -598,18 +679,19 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={handleFillDemoOtp}
-                  className="text-[#3ECF8E] hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-[#3ECF8E] hover:underline flex items-center gap-1 cursor-pointer font-medium"
                 >
                   <Sparkles className="w-3 h-3" />
                   Auto-fill Demo Code (452188)
                 </button>
                 <button
                   type="button"
-                  onClick={() => alert('New OTP sent to email and ABHA mobile.')}
-                  className="hover:text-white flex items-center gap-1 cursor-pointer"
+                  disabled={isSendingOtp}
+                  onClick={handleResendOtp}
+                  className="hover:text-white flex items-center gap-1 cursor-pointer disabled:opacity-50"
                 >
-                  <RefreshCw className="w-2.5 h-2.5" />
-                  Resend OTP
+                  <RefreshCw className={`w-2.5 h-2.5 ${isSendingOtp ? 'animate-spin' : ''}`} />
+                  <span>{isSendingOtp ? 'Resending...' : 'Resend OTP'}</span>
                 </button>
               </div>
 
