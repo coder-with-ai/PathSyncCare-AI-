@@ -26,8 +26,9 @@ export function getDatabaseConfig(): DatabaseConfig {
   }
 
   // Fallback to Vite env variables if provided
-  const envUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
-  const envKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
+  const metaEnv = (import.meta as any).env || {};
+  const envUrl = metaEnv.VITE_SUPABASE_URL || metaEnv.SUPABASE_URL || '';
+  const envKey = metaEnv.VITE_SUPABASE_ANON_KEY || metaEnv.SUPABASE_PUBLISHABLE_KEY || metaEnv.SUPABASE_ANON_KEY || '';
 
   return {
     provider: envUrl && envKey ? 'supabase' : 'mock',
@@ -179,3 +180,4 @@ export async function recordSupabaseObservation(
     return false;
   }
 }
+

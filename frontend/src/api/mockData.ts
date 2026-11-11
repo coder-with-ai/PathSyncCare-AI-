@@ -732,3 +732,145 @@ export const mockAuditLogs: AuditLogEvent[] = [
     details: 'Digital token exchange validated against National Health Authority (NHA) ABDM Sandbox.',
   },
 ];
+
+// ─── Dynamic Registration & Patient Persistence Store ───────────────────────
+const REGISTERED_PATIENTS_KEY = 'pathcaresync_registered_patients';
+
+export function getRegisteredPatients(): PatientDetail[] {
+  try {
+    const raw = localStorage.getItem(REGISTERED_PATIENTS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.warn('Failed to parse registered patients', e);
+  }
+  return [];
+}
+
+export function getAllPatients(): PatientDetail[] {
+  const registered = getRegisteredPatients();
+  const registeredIds = new Set(registered.map(p => p.id));
+  const remaining = mock100Patients.filter(p => !registeredIds.has(p.id));
+  return [...registered, ...remaining];
+}
+
+export function registerNewPatient(data: {
+  name: string;
+  email: string;
+  abha_id: string;
+  disease: DiseaseType;
+  age?: number;
+  gender?: string;
+  phone?: string;
+  address?: string;
+  discharge_date?: string;
+}): PatientDetail {
+  const id = `P-${2000 + Math.floor(Math.random() * 8000)}`;
+  const dischargeDate = data.discharge_date || new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString().slice(0, 10);
+
+  const initialReading = data.disease === 'Hypertension' ? 128 :
+                         data.disease === 'Type 2 Diabetes' ? 115 :
+                         data.disease === 'Chronic Kidney Disease' ? 124 :
+                         data.disease === 'Coronary Artery Disease' ? 72 : 50;
+
+  const newPatient: PatientDetail = {
+    id,
+    name: data.name,
+    age: data.age || 45,
+    gender: data.gender || 'Male',
+    abha_id: data.abha_id,
+    disease: data.disease,
+    discharge_date: dischargeDate,
+    risk_score: 0.28,
+    compliance_rate: 96.0,
+    active_alerts: 0,
+    avatar_color: '#3ECF8E',
+    phone: data.phone || '+91-98765-00000',
+    address: data.address || 'Registered Post-Discharge Care Network',
+    care_plan: {
+      id: `CP-${id}`,
+      disease: data.disease,
+      created_date: dischargeDate,
+      milestones: [
+        { id: `M1-${id}`, title: 'Day 7 Tele-monitoring Review', description: 'Initial vital stabilization', due_date: dischargeDate, status: 'completed', completed_date: dischargeDate },
+        { id: `M2-${id}`, title: 'Day 14 Living Contract Verification', description: 'Target range compliance', due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString().slice(0, 10), status: 'in_progress', completed_date: null },
+        { id: `M3-${id}`, title: 'Day 30 Specialist Consultation', description: 'Comprehensive recovery assessment', due_date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 23).toISOString().slice(0, 10), status: 'pending', completed_date: null },
+      ],
+      medications: ['Prescribed Standard Post-Discharge Regimen (Daily)'],
+      instructions: ['Log daily vitals at 8 AM', 'Follow prescribed dietary restrictions', 'Contact care team if symptoms deviate'],
+    },
+    vitals_history: [
+      { timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), type: 'baseline_telemetry', value: initialReading + 6, unit: 'standard' },
+      { timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), type: 'recent_telemetry', value: initialReading, unit: 'standard' },
+    ],
+    trajectory: [
+      { day: 0, expected: initialReading + 10, actual: initialReading + 12 },
+      { day: 5, expected: initialReading + 5, actual: initialReading + 6 },
+      { day: 10, expected: initialReading, actual: initialReading },
+      { day: 15, expected: initialReading - 2, actual: null },
+      { day: 20, expected: initialReading - 4, actual: null },
+    ],
+    interventions: [
+      { date: dischargeDate, type: 'Discharge Plan Activated', description: 'Living Care Contract generated and synced with ABDM', outcome: 'Patient enrolled in PathCareSync AI' },
+    ],
+  };
+
+  const current = getRegisteredPatients();
+  const updated = [newPatient, ...current.filter(p => p.id !== id && p.abha_id !== data.abha_id)];
+  try {
+    localStorage.setItem(REGISTERED_PATIENTS_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.error('Failed to store registered patient', e);
+  }
+
+  // Prepend an active checkpoint for the new patient
+  mockCheckpoints.unshift({
+    id: `CKP-${id}-01`,
+    patient_id: id,
+    checkpoint_code: `CP-${id}`,
+    title: `Daily ${data.disease} Monitoring`,
+    field_name: data.disease === 'Hypertension' ? 'Blood Pressure' : data.disease === 'Type 2 Diabetes' ? 'Blood Glucose' : 'Primary Metric',
+    expected_range: data.disease === 'Hypertension' ? '110–130 mmHg' : 'Clinician-configured',
+    target_unit: data.disease === 'Hypertension' ? 'mmHg' : 'units',
+    measurement_frequency: 'Daily (Morning)',
+    due_date: 'Today, 8:00 PM',
+    actual_measurement: null,
+    actual_value: null,
+    has_recorded_data: false,
+    source: null,
+    recorded_date: null,
+    status: 'Due soon',
+    evaluation_rationale: 'Active checkpoint awaiting daily telemetry entry.',
+    is_reviewed: false,
+  });
+
+  return newPatient;
+}
+
+export function updatePatientProfile(patientId: string, updates: Partial<PatientDetail>): PatientDetail | null {
+  const registered = getRegisteredPatients();
+  const matchIndex = registered.findIndex(p => p.id === patientId);
+
+  let updatedPatient: PatientDetail;
+
+  if (matchIndex >= 0) {
+    updatedPatient = { ...registered[matchIndex], ...updates };
+    registered[matchIndex] = updatedPatient;
+    try {
+      localStorage.setItem(REGISTERED_PATIENTS_KEY, JSON.stringify(registered));
+    } catch (e) {
+      console.error('Failed to update patient profile in storage', e);
+    }
+  } else {
+    const mockMatch = mock100Patients.find(p => p.id === patientId);
+    if (!mockMatch) return null;
+    updatedPatient = { ...mockMatch, ...updates };
+    registered.unshift(updatedPatient);
+    try {
+      localStorage.setItem(REGISTERED_PATIENTS_KEY, JSON.stringify(registered));
+    } catch (e) {
+      console.error('Failed to persist mock patient edit to storage', e);
+    }
+  }
+
+  return updatedPatient;
+}

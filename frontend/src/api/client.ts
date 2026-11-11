@@ -4,8 +4,8 @@ import type {
   CareCheckpoint, AuditLogEvent
 } from '../types';
 import {
-  mockStats, mockWorklist, mockAlerts, mockPatients, mockPipelineRuns,
-  mockCheckpoints, mockAuditLogs
+  mockStats, mockWorklist, mockAlerts, mockPipelineRuns,
+  mockCheckpoints, mockAuditLogs, getAllPatients
 } from './mockData';
 import { recordSupabaseObservation } from './supabaseClient';
 
@@ -60,7 +60,7 @@ function getMockFallback<T>(url: string): T {
     } as unknown as T;
   }
   if (cleanUrl === '/patients') {
-    return mockPatients.map(p => ({
+    return getAllPatients().map(p => ({
       id: p.id,
       name: p.name,
       age: p.age,
@@ -76,7 +76,7 @@ function getMockFallback<T>(url: string): T {
   }
   if (cleanUrl.startsWith('/patients/') && cleanUrl.endsWith('/trajectory')) {
     const id = cleanUrl.split('/')[2];
-    const patient = mockPatients.find(p => p.id === id) || mockPatients[0];
+    const patient = getAllPatients().find(p => p.id === id) || getAllPatients()[0];
     return {
       patient_id: patient.id,
       disease: patient.disease,
@@ -86,7 +86,7 @@ function getMockFallback<T>(url: string): T {
   }
   if (cleanUrl.startsWith('/patients/')) {
     const id = cleanUrl.split('/')[2];
-    const patient = mockPatients.find(p => p.id === id) || mockPatients[0];
+    const patient = getAllPatients().find(p => p.id === id) || getAllPatients()[0];
     return patient as unknown as T;
   }
   if (cleanUrl.startsWith('/alerts/')) {

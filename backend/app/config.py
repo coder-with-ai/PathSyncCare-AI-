@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     # Optional generic database URL override (e.g. for testing with sqlite)
     DATABASE_URL: Optional[str] = None
 
+    # Supabase Database & Auth Configuration
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_PUBLISHABLE_KEY: Optional[str] = None
+    SUPABASE_SECRET_KEY: Optional[str] = None
+    SUPABASE_JWKS_URL: Optional[str] = None
+
     # Application settings
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"

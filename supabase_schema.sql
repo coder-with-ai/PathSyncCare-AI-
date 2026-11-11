@@ -405,3 +405,4 @@ INSERT INTO public.alerts (alert_id, patient_id, checkpoint_id, severity, alert_
 VALUES
 ('ALT-1001', 'P-1001', 'CK-1001-01', 'critical', 'HEMODYNAMIC_DEVIATION', 'Sustained Systolic BP Spike with Missed Amlodipine Dose', 'rule-based', 'BP > 140/90 mmHg for 2 consecutive readings', 'XGBoost Risk Score 86.4% (Confidence 0.96)', 'Patient Ramesh Patel recorded BP of 148/94 mmHg alongside a reported missed morning dosage. Non-linear variance from baseline indicates accelerated deterioration risk. Recommend tele-consultation and adherence reinforcement.', 'active')
 ON CONFLICT (alert_id) DO NOTHING;
+
