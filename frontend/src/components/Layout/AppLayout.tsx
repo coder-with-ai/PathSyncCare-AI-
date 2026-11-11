@@ -4,11 +4,15 @@ import { motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import ABDMModal from './ABDMModal';
 import NotificationDrawer from './NotificationDrawer';
-import { Bell, Search, ShieldCheck } from 'lucide-react';
+import DatabaseConnectionModal from '../Database/DatabaseConnectionModal';
+import { Bell, Search, ShieldCheck, Database } from 'lucide-react';
+import { getDatabaseConfig, type DatabaseConfig } from '../../api/supabaseClient';
 
 export default function AppLayout() {
   const [abdmModalOpen, setAbdmModalOpen] = useState(false);
   const [notifDrawerOpen, setNotifDrawerOpen] = useState(false);
+  const [dbModalOpen, setDbModalOpen] = useState(false);
+  const [dbConfig, setDbConfig] = useState<DatabaseConfig>(() => getDatabaseConfig());
 
   return (
     <div className="flex min-h-screen">
@@ -49,6 +53,25 @@ export default function AppLayout() {
           </div>
 
           <div className="flex items-center gap-3 relative">
+            {/* Database Switcher Button */}
+            <button
+              onClick={() => setDbModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all cursor-pointer group"
+              style={{
+                background: dbConfig.provider === 'supabase'
+                  ? 'rgba(62,207,142,0.1)'
+                  : 'rgba(107,154,150,0.1)',
+                border: dbConfig.provider === 'supabase'
+                  ? '1px solid rgba(62,207,142,0.3)'
+                  : '1px solid rgba(107,154,150,0.25)',
+              }}
+            >
+              <Database className={`w-3.5 h-3.5 ${dbConfig.provider === 'supabase' ? 'text-[#3ECF8E]' : 'text-[var(--color-primary-light)]'}`} />
+              <span className={`text-xs font-semibold ${dbConfig.provider === 'supabase' ? 'text-[#3ECF8E]' : 'text-[var(--color-primary-light)]'}`}>
+                {dbConfig.provider === 'supabase' ? 'Supabase' : dbConfig.provider === 'azure' ? 'Azure SQL' : 'Demo DB'}
+              </span>
+            </button>
+
             {/* ABDM Connected */}
             <button
               onClick={() => setAbdmModalOpen(true)}
@@ -106,6 +129,13 @@ export default function AppLayout() {
       <ABDMModal
         isOpen={abdmModalOpen}
         onClose={() => setAbdmModalOpen(false)}
+      />
+
+      {/* Database Connection Modal */}
+      <DatabaseConnectionModal
+        isOpen={dbModalOpen}
+        onClose={() => setDbModalOpen(false)}
+        onConfigChanged={cfg => setDbConfig(cfg)}
       />
     </div>
   );

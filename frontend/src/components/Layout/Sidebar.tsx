@@ -6,10 +6,11 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', desc: 'Overview & KPIs' },
-  { to: '/patients',  icon: Users,            label: 'Patients',  desc: 'Patient registry' },
-  { to: '/review',    icon: ShieldCheck,       label: 'Human Review', desc: 'AI validation queue' },
-  { to: '/pipeline',  icon: GitBranch,         label: 'Pipeline Logs', desc: 'AI pipeline runs' },
+  { to: '/dashboard',      icon: LayoutDashboard, label: 'Dashboard',      desc: 'Overview & KPIs' },
+  { to: '/patients',       icon: Users,            label: 'Patients',       desc: '100-Patient cohort' },
+  { to: '/patient-portal', icon: HeartPulse,       label: 'Patient Portal', desc: 'Track health progress' },
+  { to: '/review',         icon: ShieldCheck,       label: 'Human Review',   desc: 'AI validation queue' },
+  { to: '/pipeline',       icon: GitBranch,         label: 'Pipeline Logs',  desc: 'AI pipeline runs' },
 ];
 
 export default function Sidebar() {

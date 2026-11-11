@@ -5,6 +5,7 @@ import PatientProfilePage from './pages/PatientProfile';
 import PatientsPage from './pages/PatientsPage';
 import HumanReviewQueue from './pages/HumanReviewQueue';
 import PipelineLogs from './pages/PipelineLogs';
+import PatientPortal from './pages/PatientPortal';
 import Login from './pages/Login';
 
 export default function App() {
@@ -19,6 +20,8 @@ export default function App() {
           <Route path="/patients/:id" element={<PatientProfilePage />} />
           <Route path="/review" element={<HumanReviewQueue />} />
           <Route path="/pipeline" element={<PipelineLogs />} />
+          <Route path="/patient-portal" element={<PatientPortal />} />
+          <Route path="/my-health" element={<PatientPortal />} />
         </Route>
       </Routes>
     </BrowserRouter>

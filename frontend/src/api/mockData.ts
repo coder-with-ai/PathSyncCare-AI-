@@ -1,5 +1,6 @@
 import type {
-  DashboardStats, WorklistItem, Alert, PatientDetail, PipelineRun
+  DashboardStats, WorklistItem, Alert, PatientDetail, PipelineRun,
+  CareCheckpoint, AuditLogEvent, DiseaseType
 } from '../types';
 
 export const mockStats: DashboardStats = {
@@ -421,5 +422,313 @@ export const mockPipelineRuns: PipelineRun[] = [
       { id: 'N6', name: 'Gemini 1.5 Flash Explainer', type: 'llm', status: 'success', started_at: '11:30:01', completed_at: '11:30:01', duration_ms: 390, input_summary: 'Hyperkalemia pattern', output_summary: 'Urgent clinical rationale' },
       { id: 'N9', name: 'Multi-Channel Dispatcher', type: 'dispatcher', status: 'success', started_at: '11:30:01', completed_at: '11:30:02', duration_ms: 95, input_summary: 'Critical alert ALT-001', output_summary: 'Dispatched to Doctor top queue' },
     ],
+  },
+];
+
+// ─── Care Checkpoints (Core Expected vs Actual Evaluator) ───────────────────
+export const mockCheckpoints: CareCheckpoint[] = [
+  {
+    id: 'CKP-001',
+    patient_id: 'P-1001',
+    checkpoint_code: 'CP-001',
+    title: 'Morning Resting Blood Pressure',
+    field_name: 'Blood Pressure',
+    expected_range: '110–130 / 70–85 mmHg',
+    target_min: 110,
+    target_max: 130,
+    target_unit: 'mmHg',
+    measurement_frequency: 'Daily (Morning)',
+    due_date: '10 November',
+    actual_measurement: '148/94 mmHg',
+    actual_value: 148,
+    has_recorded_data: true,
+    source: 'Patient-reported',
+    recorded_date: '10 November',
+    status: 'Outside expected range',
+    evaluation_rationale: 'Systolic measurement (148 mmHg) exceeds clinician approved upper target (130 mmHg).',
+    trend_variance_pct: 13.8,
+    is_reviewed: false,
+  },
+  {
+    id: 'CKP-002',
+    patient_id: 'P-1002',
+    checkpoint_code: 'CP-002',
+    title: 'Fasting Blood Glucose',
+    field_name: 'Fasting Blood Glucose',
+    expected_range: '80–120 mg/dL',
+    target_min: 80,
+    target_max: 120,
+    target_unit: 'mg/dL',
+    measurement_frequency: 'Daily (Pre-breakfast)',
+    due_date: '11 November',
+    actual_measurement: '112 mg/dL',
+    actual_value: 112,
+    has_recorded_data: true,
+    source: 'Connected Device',
+    recorded_date: '11 November',
+    status: 'On track',
+    evaluation_rationale: 'Evidence meets the approved checkpoint criteria perfectly.',
+    is_reviewed: false,
+  },
+  {
+    id: 'CKP-003',
+    patient_id: 'P-1001',
+    checkpoint_code: 'CP-003',
+    title: 'Daily Medication Adherence Confirmation',
+    field_name: 'Amlodipine 5mg',
+    expected_range: '100% adherence',
+    target_unit: 'compliance',
+    measurement_frequency: 'Daily',
+    due_date: 'Today, 8:00 PM',
+    actual_measurement: null,
+    actual_value: null,
+    has_recorded_data: false, // Cardinal rule: missing data is not normal data
+    source: null,
+    recorded_date: null,
+    status: 'Due soon',
+    evaluation_rationale: 'Pending evening adherence confirmation.',
+    is_reviewed: false,
+  },
+  {
+    id: 'CKP-004',
+    patient_id: 'PAT-001',
+    checkpoint_code: 'CP-004',
+    title: 'Bi-weekly Blood Pressure Check',
+    field_name: 'Blood Pressure',
+    expected_range: '120–135 mmHg',
+    target_unit: 'mmHg',
+    measurement_frequency: 'Twice daily',
+    due_date: '8 November',
+    actual_measurement: null,
+    actual_value: null,
+    has_recorded_data: false,
+    source: null,
+    recorded_date: null,
+    status: 'Overdue',
+    evaluation_rationale: 'Required measurement is missing after its due window (No measurement recorded).',
+    is_reviewed: false,
+  },
+  {
+    id: 'CKP-005',
+    patient_id: 'P-1003',
+    checkpoint_code: 'CP-005',
+    title: 'Post-PCI Functional METs Capacity',
+    field_name: 'Physical Activity & Angina',
+    expected_range: '>= 5.0 METs with CCS 0',
+    target_unit: 'METs',
+    measurement_frequency: 'Weekly',
+    due_date: '9 November',
+    actual_measurement: '3.8 METs (CCS II)',
+    actual_value: 3.8,
+    has_recorded_data: true,
+    source: 'Clinician-entered',
+    recorded_date: '9 November',
+    status: 'Worsening trend',
+    evaluation_rationale: 'Functional capacity declined from 5.2 to 3.8 METs across last 3 readings.',
+    is_reviewed: false,
+  },
+  {
+    id: 'CKP-006',
+    patient_id: 'P-1004',
+    checkpoint_code: 'CP-006',
+    title: 'Serum Potassium & eGFR Check',
+    field_name: 'Renal Function',
+    expected_range: '3.5–5.0 mEq/L',
+    target_unit: 'mEq/L',
+    measurement_frequency: 'Bi-weekly',
+    due_date: '10 November',
+    actual_measurement: '5.2 mEq/L',
+    actual_value: 5.2,
+    has_recorded_data: true,
+    source: 'Diagnostic Lab',
+    recorded_date: '10 November',
+    status: 'Outside expected range',
+    evaluation_rationale: 'Mild hyperkalemia detected; requires dietary potassium restriction review.',
+    is_reviewed: false,
+  },
+  {
+    id: 'CKP-007',
+    patient_id: 'P-1005',
+    checkpoint_code: 'CP-007',
+    title: 'DOTS Directly Observed Adherence',
+    field_name: 'Anti-TB Treatment',
+    expected_range: 'Daily Supervision',
+    target_unit: 'adherence',
+    measurement_frequency: 'Daily',
+    due_date: '10 November',
+    actual_measurement: 'Patient claims taken / ASHA reports missed',
+    has_recorded_data: true,
+    source: 'ASHA Telemetry',
+    recorded_date: '10 November',
+    status: 'Conflicting data',
+    evaluation_rationale: 'Patient-reported mobile log contradicts ASHA supervisor field inspection report.',
+    is_reviewed: false,
+  },
+  {
+    id: 'CKP-008',
+    patient_id: 'P-1006',
+    checkpoint_code: 'CP-008',
+    title: 'Barthel Index Mobility Re-assessment',
+    field_name: 'Functional Independence',
+    expected_range: '>= 75 score',
+    target_unit: 'score',
+    measurement_frequency: 'Weekly',
+    due_date: '7 November',
+    actual_measurement: null,
+    has_recorded_data: false,
+    source: null,
+    recorded_date: null,
+    status: 'Insufficient evidence',
+    evaluation_rationale: 'Physiotherapist session notes incomplete; unable to calculate Barthel Index.',
+    is_reviewed: false,
+  },
+  {
+    id: 'CKP-009',
+    patient_id: 'P-1007',
+    checkpoint_code: 'CP-009',
+    title: 'PHQ-9 Depression Symptom Score',
+    field_name: 'PHQ-9 Score',
+    expected_range: '< 10 score',
+    target_unit: 'score',
+    measurement_frequency: 'Bi-weekly',
+    due_date: '5 November',
+    actual_measurement: '7 score',
+    actual_value: 7,
+    has_recorded_data: true,
+    source: 'Patient-reported',
+    recorded_date: '5 November',
+    status: 'Resolved',
+    evaluation_rationale: 'Score in remission range; validated and signed off by Dr. Arun Mehta.',
+    is_reviewed: true,
+    reviewed_by: 'Dr. Arun Mehta',
+    reviewed_at: '6 November',
+    clinician_decision: 'Maintain current SSRI dosage; next review in 30 days.',
+  },
+];
+
+// ─── 100-Patient Synthetic Cohort Across All 7 Care Pathways ────────────────
+const diseasesList: DiseaseType[] = [
+  'Hypertension',
+  'Type 2 Diabetes',
+  'Tuberculosis',
+  'Coronary Artery Disease',
+  'Chronic Kidney Disease',
+  'Stroke Recovery',
+  'Depression'
+];
+
+const indianFirstNames = [
+  'Ramesh', 'Sunita', 'Amit', 'Lakshmi', 'Mohammad', 'Kavita', 'Arjun', 'Pooja',
+  'Deepak', 'Ananya', 'Rajesh', 'Priya', 'Sanjay', 'Geeta', 'Vikram', 'Meena',
+  'Rahul', 'Anita', 'Manish', 'Rekha', 'Alok', 'Shweta', 'Naveen', 'Usha',
+  'Girish', 'Bhavna', 'Dinesh', 'Kiran', 'Suresh', 'Preeti', 'Vijay', 'Smita',
+  'Harish', 'Sarita', 'Pankaj', 'Ritu', 'Pradeep', 'Sunil', 'Jyoti', 'Tarun'
+];
+
+const indianLastNames = [
+  'Patel', 'Sharma', 'Verma', 'Iyer', 'Irfan', 'Sundaram', 'Sengupta', 'Mishra',
+  'Chauhan', 'Nair', 'Kumar', 'Reddy', 'Gupta', 'Banerjee', 'Rao', 'Joshi',
+  'Kulkarni', 'Deshmukh', 'Saxena', 'Bhatia', 'Tripathi', 'Yadav', 'Malhotra', 'Pandey'
+];
+
+export const mock100Patients: PatientDetail[] = Array.from({ length: 100 }, (_, i) => {
+  const disease = diseasesList[i % diseasesList.length];
+  const firstName = indianFirstNames[i % indianFirstNames.length];
+  const lastName = indianLastNames[(i * 3) % indianLastNames.length];
+  const id = `P-${1001 + i}`;
+  const abha = `91-${(2340 + i).toString().padStart(4, '0')}-${(6780 + i).toString().padStart(4, '0')}-${(1001 + i).toString().padStart(4, '0')}`;
+  const risk = Number((0.25 + (Math.sin(i * 1.7) * 0.35 + 0.35)).toFixed(2));
+  const compliance = Number((65 + ((i * 7) % 32)).toFixed(1));
+  const age = 32 + (i % 48);
+  const gender = i % 2 === 0 ? 'Male' : 'Female';
+
+  return {
+    id,
+    name: `${firstName} ${lastName}`,
+    age,
+    gender,
+    abha_id: abha,
+    disease,
+    discharge_date: `2026-08-${String((i % 28) + 1).padStart(2, '0')}`,
+    risk_score: risk,
+    compliance_rate: compliance,
+    active_alerts: risk > 0.75 ? 3 : risk > 0.5 ? 1 : 0,
+    avatar_color: ['#6B9A96', '#D4860A', '#588157', '#C0392B', '#8E44AD', '#2980B9', '#16A085'][i % 7],
+    phone: `+91-98765-${String(40000 + i).padStart(5, '0')}`,
+    address: 'AIIMS Post-Discharge Recovery Network',
+    care_plan: {
+      id: `CP-${1001 + i}`,
+      disease,
+      created_date: '2026-08-01',
+      milestones: [
+        { id: `M1-${i}`, title: 'Day 7 Telemetry Review', description: 'Vital baseline check', due_date: '2026-08-08', status: 'completed', completed_date: '2026-08-08' },
+        { id: `M2-${i}`, title: 'Day 14 Ambulatory Control', description: 'Living contract verification', due_date: '2026-08-15', status: 'completed', completed_date: '2026-08-15' },
+        { id: `M3-${i}`, title: 'Day 30 Biochemical Panel', description: 'Safety and efficacy check', due_date: '2026-08-31', status: 'in_progress', completed_date: null },
+      ],
+      medications: ['Prescribed Maintenance Therapy (Daily)'],
+      instructions: ['Log vital telemetry daily', 'Adhere to prescribed dietary salt/carb guidelines', 'Contact ASHA on deviation'],
+    },
+    vitals_history: [
+      { timestamp: '2026-08-10T08:00:00Z', type: 'primary_metric', value: 130 + (i % 25), unit: 'standard' },
+      { timestamp: '2026-08-20T08:00:00Z', type: 'primary_metric', value: 125 + (i % 20), unit: 'standard' },
+    ],
+    trajectory: [
+      { day: 0, expected: 150, actual: 154 },
+      { day: 5, expected: 142, actual: 145 },
+      { day: 10, expected: 135, actual: 138 },
+      { day: 15, expected: 130, actual: 132 },
+      { day: 20, expected: 126, actual: 128 },
+    ],
+    interventions: [
+      { date: '2026-08-12', type: 'Care Team Sync', description: 'Living contract review', outcome: 'Patient adhering well' },
+    ],
+  };
+});
+
+// ─── Immutable Audit Ledger Mock Events ─────────────────────────────────────
+export const mockAuditLogs: AuditLogEvent[] = [
+  {
+    id: 'AUD-8821',
+    user_name: 'Dr. Arun Mehta',
+    user_role: 'Lead Cardiologist',
+    action: 'REVIEW_CHECKPOINT',
+    resource_type: 'care_checkpoints',
+    resource_id: 'CKP-001',
+    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+    ip_address: '10.0.4.12',
+    details: 'Clinician reviewed systolic blood pressure spike (148 mmHg); confirmed Amlodipine titration.',
+  },
+  {
+    id: 'AUD-8820',
+    user_name: 'Sunita Devi (ASHA)',
+    user_role: 'Care Coordinator / ASHA',
+    action: 'CREATE',
+    resource_type: 'observations',
+    resource_id: 'OBS-4412',
+    timestamp: new Date(Date.now() - 1000 * 60 * 55).toISOString(),
+    ip_address: '10.0.12.8',
+    details: 'Community field observation recorded via ASHA Mobile Gateway.',
+  },
+  {
+    id: 'AUD-8819',
+    user_name: 'Dr. Priya Nair',
+    user_role: 'Consultant Endocrinologist',
+    action: 'UPDATE',
+    resource_type: 'care_plans',
+    resource_id: 'CP-1002',
+    timestamp: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+    ip_address: '10.0.4.18',
+    details: 'Approved Living Contract revision v2.1: HbA1c target relaxed to < 7.2% for geriatric safety.',
+  },
+  {
+    id: 'AUD-8818',
+    user_name: 'ABDM Gateway System',
+    user_role: 'Clinical Administrator',
+    action: 'AUTH_LOGIN',
+    resource_type: 'session',
+    resource_id: 'SES-9921',
+    timestamp: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
+    ip_address: '127.0.0.1',
+    details: 'Digital token exchange validated against National Health Authority (NHA) ABDM Sandbox.',
   },
 ];

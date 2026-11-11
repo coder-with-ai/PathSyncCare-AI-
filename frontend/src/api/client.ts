@@ -1,10 +1,13 @@
 import type {
   PatientSummary, PatientDetail, Alert, PipelineRun,
-  PipelineDAGData, WorklistItem, DashboardStats
+  PipelineDAGData, WorklistItem, DashboardStats,
+  CareCheckpoint, AuditLogEvent
 } from '../types';
 import {
-  mockStats, mockWorklist, mockAlerts, mockPatients, mockPipelineRuns
+  mockStats, mockWorklist, mockAlerts, mockPatients, mockPipelineRuns,
+  mockCheckpoints, mockAuditLogs
 } from './mockData';
+import { recordSupabaseObservation } from './supabaseClient';
 
 const BASE = '/api';
 
@@ -105,6 +108,12 @@ function getMockFallback<T>(url: string): T {
       edges: [],
     } as unknown as T;
   }
+  if (cleanUrl.includes('/checkpoints')) {
+    return mockCheckpoints as unknown as T;
+  }
+  if (cleanUrl.includes('/audit/events')) {
+    return mockAuditLogs as unknown as T;
+  }
 
   return {} as T;
 }
@@ -163,3 +172,29 @@ export const getPipelineDAG = () => fetchJSON<PipelineDAGData>('/pipeline/nodes'
 // ─── Worklist ───────────────────────────────────────────────────────────────
 export const getWorklist = () => fetchJSON<WorklistItem[]>('/worklist');
 export const getDashboardStats = () => fetchJSON<DashboardStats>('/worklist/stats');
+
+// ─── Checkpoints & Observations (Dynamic Disease Tracking & Living Contract) ──
+export const getCheckpoints = (patientId: string) =>
+  fetchJSON<CareCheckpoint[]>(`/patients/${patientId}/checkpoints`);
+
+export const reviewCheckpoint = (
+  patientId: string,
+  checkpointId: string,
+  decision: string,
+  notes?: string,
+  clinicianName: string = 'Dr. Arun Mehta'
+) => postJSON(`/checkpoints/${checkpointId}/review`, { patientId, decision, notes, clinicianName });
+
+export const recordObservation = async (
+  patientId: string,
+  payload: Record<string, unknown>,
+  source: string = 'Clinician-entered',
+  clinicianName?: string
+) => {
+  // Sync to Supabase in background if configured
+  await recordSupabaseObservation(patientId, payload, source, clinicianName);
+  return postJSON(`/patients/${patientId}/observations`, { payload, source, clinicianName });
+};
+
+// ─── Security Audit Events ──────────────────────────────────────────────────
+export const getAuditLogs = () => fetchJSON<AuditLogEvent[]>('/audit/events');

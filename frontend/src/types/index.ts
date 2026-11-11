@@ -139,7 +139,7 @@ export interface PatientDetail extends PatientSummary {
   vitals_history: VitalReading[];
   trajectory: TrajectoryPoint[];
   interventions: Intervention[];
-  checkpoints: CareCheckpoint[];
+  checkpoints?: CareCheckpoint[];
   consent?: ConsentRecord;
 }
 
