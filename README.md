@@ -35,7 +35,7 @@ We are specifically targeting the majority of India's Non-Communicable Disease (
 
 ## 💻 Tech Stack & Architecture
 
-Our infrastructure is powered by **RocketRide: Developer-First AI Pipeline Infrastructure**, ensuring real-time processing, high availability, and secure clinical data handling. 
+ Developer-First AI Pipeline Infrastructure, ensuring real-time processing, high availability, and secure clinical data handling. 
 
 *For a detailed look at our system architecture, data flow, and the Human-in-the-Loop AI node pipeline, please refer to the architecture diagram: image_58cf89.png*
 
